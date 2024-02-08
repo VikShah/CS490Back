@@ -1,12 +1,10 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask import request
 import mysql.connector
 
 app = Flask(__name__)
 CORS(app)
 
-# MySQL connection configuration
 mysql_config = {
     'host': 'localhost',
     'port': 3306,
@@ -18,11 +16,9 @@ mysql_config = {
 @app.route('/test')
 def top_rented_films():
     try:
-        # Connect to MySQL database
         db_connection = mysql.connector.connect(**mysql_config)
         cursor = db_connection.cursor()
 
-        # Execute SQL query to retrieve top 5 rented films
         query = """
         SELECT film.film_id, film.title, category.name AS category_name, COUNT(rental.rental_id) AS rented
         FROM film
@@ -37,7 +33,6 @@ def top_rented_films():
         cursor.execute(query)
         top_rented_films = cursor.fetchall()
 
-        # Convert results to list of dictionaries
         films_data = []
         for row in top_rented_films:
             film_data = {
@@ -53,7 +48,6 @@ def top_rented_films():
         print("Error fetching top rented films:", e)
         return jsonify({'error': 'Error fetching top rented films'})
     finally:
-        # Close the database connection
         if 'db_connection' in locals() and db_connection.is_connected():
             cursor.close()
             db_connection.close()
@@ -61,11 +55,9 @@ def top_rented_films():
 @app.route('/rest')
 def top_actors():
     try:
-        # Connect to MySQL database
         db_connection = mysql.connector.connect(**mysql_config)
         cursor = db_connection.cursor()
 
-        # Execute SQL query to retrieve top 5 actors in most films
         query = """
         SELECT actor.actor_id, actor.first_name, actor.last_name, COUNT(film_actor.film_id) AS movies
         FROM actor
@@ -77,7 +69,6 @@ def top_actors():
         cursor.execute(query)
         top_actors_data = cursor.fetchall()
 
-        # Convert results to list of dictionaries
         actors_data = []
         for row in top_actors_data:
             actor_data = {
@@ -93,7 +84,6 @@ def top_actors():
         print("Error fetching top actors:", e)
         return jsonify({'error': 'Error fetching top actors'})
     finally:
-        # Close the database connection
         if 'db_connection' in locals() and db_connection.is_connected():
             cursor.close()
             db_connection.close()
@@ -101,11 +91,9 @@ def top_actors():
 @app.route('/actor-films/<int:actor_id>')
 def actor_films(actor_id):
     try:
-        # Connect to MySQL database
         db_connection = mysql.connector.connect(**mysql_config)
         cursor = db_connection.cursor()
 
-        # Execute SQL query to retrieve top 5 rented films for the actor
         query = """
         SELECT film.film_id, film.title, COUNT(rental.rental_id) AS rental_count
         FROM film
@@ -121,7 +109,6 @@ def actor_films(actor_id):
         cursor.execute(query, (actor_id,))
         top_actor_films = cursor.fetchall()
 
-        # Convert results to list of dictionaries
         films_data = []
         for row in top_actor_films:
             film_data = {
@@ -136,7 +123,6 @@ def actor_films(actor_id):
         print("Error fetching top actor films:", e)
         return jsonify({'error': 'Error fetching top actor films'})
     finally:
-        # Close the database connection
         if 'db_connection' in locals() and db_connection.is_connected():
             cursor.close()
             db_connection.close()
@@ -144,15 +130,11 @@ def actor_films(actor_id):
 @app.route('/search-films')
 def search_films():
     try:
-        # Connect to MySQL database
         db_connection = mysql.connector.connect(**mysql_config)
         cursor = db_connection.cursor()
 
-        # Get search parameters from request
         film_name = request.args.get('film_name')
-        # You can also get other search criteria like actor name or genre here
 
-        # Construct SQL query based on search criteria
         query = """
         SELECT film.film_id, film.title, film.description, category.name AS category_name, film.release_year
         FROM film
@@ -160,13 +142,10 @@ def search_films():
         JOIN category ON film_category.category_id = category.category_id
         WHERE film.title LIKE %s
         """
-        # Add additional conditions in the WHERE clause for other criteria like actor name or genre
 
-        # Execute SQL query
         cursor.execute(query, (f'%{film_name}%',))
         search_results = cursor.fetchall()
 
-        # Convert results to list of dictionaries
         films_data = []
         for row in search_results:
             film_data = {
@@ -183,7 +162,6 @@ def search_films():
         print("Error searching films:", e)
         return jsonify({'error': 'Error searching films'})
     finally:
-        # Close the database connection
         if 'db_connection' in locals() and db_connection.is_connected():
             cursor.close()
             db_connection.close()
@@ -191,14 +169,11 @@ def search_films():
 @app.route('/search-films-by-actor')
 def search_films_by_actor():
     try:
-        # Connect to MySQL database
         db_connection = mysql.connector.connect(**mysql_config)
         cursor = db_connection.cursor()
 
-        # Get search parameters from request
         actor_name = request.args.get('actor_name')
 
-        # Construct SQL query based on search criteria
         query = """
         SELECT film.film_id, film.title, film.description, category.name AS category_name, film.release_year
         FROM film
@@ -208,11 +183,10 @@ def search_films_by_actor():
         JOIN category ON film_category.category_id = category.category_id
         WHERE actor.first_name LIKE %s OR actor.last_name LIKE %s
         """
-        # Execute SQL query
+
         cursor.execute(query, (f'%{actor_name}%', f'%{actor_name}%'))
         search_results = cursor.fetchall()
 
-        # Convert results to list of dictionaries
         films_data = []
         for row in search_results:
             film_data = {
@@ -229,7 +203,6 @@ def search_films_by_actor():
         print("Error searching films by actor:", e)
         return jsonify({'error': 'Error searching films by actor'})
     finally:
-        # Close the database connection
         if 'db_connection' in locals() and db_connection.is_connected():
             cursor.close()
             db_connection.close()
@@ -237,14 +210,11 @@ def search_films_by_actor():
 @app.route('/search-films-by-genre')
 def search_films_by_genre():
     try:
-        # Connect to MySQL database
         db_connection = mysql.connector.connect(**mysql_config)
         cursor = db_connection.cursor()
 
-        # Get search parameters from request
         genre = request.args.get('genre')
 
-        # Construct SQL query based on search criteria
         query = """
         SELECT film.film_id, film.title, film.description, category.name AS category_name, film.release_year
         FROM film
@@ -253,11 +223,9 @@ def search_films_by_genre():
         WHERE category.name LIKE %s
         """
         
-        # Execute SQL query
         cursor.execute(query, (f'%{genre}%',))
         search_results = cursor.fetchall()
 
-        # Convert results to list of dictionaries
         films_data = []
         for row in search_results:
             film_data = {
@@ -274,7 +242,6 @@ def search_films_by_genre():
         print("Error searching films by genre:", e)
         return jsonify({'error': 'Error searching films by genre'})
     finally:
-        # Close the database connection
         if 'db_connection' in locals() and db_connection.is_connected():
             cursor.close()
             db_connection.close()
@@ -282,18 +249,15 @@ def search_films_by_genre():
 @app.route('/customers')
 def get_customers():
     try:
-        # Connect to MySQL database
         db_connection = mysql.connector.connect(**mysql_config)
         cursor = db_connection.cursor()
 
-        # Execute SQL query to retrieve all customers with their first name, last name, and customer ID
         query = """
         SELECT customer_id, first_name, last_name FROM customer
         """
         cursor.execute(query)
         customers = cursor.fetchall()
 
-        # Convert results to list of dictionaries
         customers_data = []
         for row in customers:
             customer_data = {
@@ -308,7 +272,6 @@ def get_customers():
         print("Error fetching customers:", e)
         return jsonify({'error': 'Error fetching customers'})
     finally:
-        # Close the database connection
         if 'db_connection' in locals() and db_connection.is_connected():
             cursor.close()
             db_connection.close()
